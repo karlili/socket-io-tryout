@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>Socket.IO chat</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font: 13px Helvetica, Arial;
+    }
+    
+    form {
+      background: #000;
+      padding: 3px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+    
+    form input {
+      border: 0;
+      padding: 10px;
+      width: 90%;
+      margin-right: .5%;
+    }
+    
+    form button {
+      width: 9%;
+      background: rgb(130, 224, 255);
+      border: none;
+      padding: 10px;
+    }
+    
+    #messages {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+    }
+    
+    #messages li {
+      padding: 5px 10px;
+    }
+    
+    #messages li:nth-child(odd) {
+      background: #eee;
+    }
+  </style>
+  <script src="https://code.jquery.com/jquery-3.1.1.js" integrity="sha256-16cdPddA6VdVInumRGo6IbivbERE8p7CQR3HzTBuELA=" crossorigin="anonymous"></script>
+  <script src="resources/socket.io.js"></script>
+
+</head>
+
+<body>
+  <ul id="messages">
+
+  </ul>
+  <hr />
+  <input type="text" id="username" placeholder="Username" />
+  <input id="m" autocomplete="off" />
+  <button id="sendButton" type="button">Send</button>
+
+  <script>
+    var socket = io();
+
+
+
+
+    //Client side UI Interactions
+    $('#sendButton').click(function () {
+      var username = $('#username').val();
+      var message = $('#m').val();
+      console.log("User", username, "Message", message);
+      socket.emit('message', {
+        username: username, message: message
+      });
+      $('#messages').append("<li> " + message + "@" + username + "</li>");
+      $('#m').val('');
+    });
+
+
+    //Receiving Events
+    socket.on('receive_message', function (messageBundle) {
+      console.log("Received From:", messageBundle.username, "Message:", messageBundle.message);
+      $('#messages').append("<li> " + messageBundle.message + "@" + messageBundle.username + " </li>");
+    })
+  </script>
+</body>
+
+</html>
