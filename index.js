@@ -14,8 +14,10 @@ app.get('/', function (req, res) {
   res.sendFile(__dirname + '/index.html');
 });
 
-var server = app.listen(8080, function () {
-  console.log('listening on *:8080');
+
+var port = process.env.PORT || 8080;
+var server = app.listen(port, function () {
+  console.log('listening on *:', port);
 });
 
 var io = require('socket.io')(server);
