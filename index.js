@@ -14,8 +14,8 @@ app.get('/', function (req, res) {
   res.sendFile(__dirname + '/index.html');
 });
 
-var server = app.listen(80, function () {
-  console.log('listening on *:3000');
+var server = app.listen(8080, function () {
+  console.log('listening on *:8080');
 });
 
 var io = require('socket.io')(server);
