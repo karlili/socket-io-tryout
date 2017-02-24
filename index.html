@@ -50,44 +50,125 @@
       background: #eee;
     }
   </style>
+
   <script src="https://code.jquery.com/jquery-3.1.1.js" integrity="sha256-16cdPddA6VdVInumRGo6IbivbERE8p7CQR3HzTBuELA=" crossorigin="anonymous"></script>
-  <script src="resources/socket.io.js"></script>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+  <script src="socket.io/socket.io.js"></script>
+  <script src="socket.io-p2p/socketiop2p.min.js"></script>
 
 </head>
 
 <body>
-  <ul id="messages">
+  <div class="container">
+    <div class="row">
+      <p id="status">Connecting</p>
+    </div>
+  </div>
 
-  </ul>
   <hr />
-  <input type="text" id="username" placeholder="Username" />
-  <input id="m" autocomplete="off" />
-  <button id="sendButton" type="button">Send</button>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-6"> P2P Status
+        <input type="radio" id="p2p-status-on" name="p2p-status" value="on"> On
+        <input type="radio" id="p2p-status-off" name="p2p-status" value="off"> Off
+      </div>
+      <div class="col-md-6">
+        Currently in Room <input type="text" id="room" placeholder="Room" value="public" />
+        <button id="joinRoom" type="button">Join Room</button>
+        <button id="leaveRoom" type="button">Leave Room </button>
+      </div>
+    </div>
+  </div>
+  <hr />
+  <div class="container">
+
+    <input type="text" id="username" placeholder="Username" />
+    <input id="m" autocomplete="off" />
+    <button id="sendButton" type="button">Send</button>
+  </div>
+  <div id="message-panel" class="container">
+    <div id="public-lobby" class="col-md-4 panel">
+      <h3>Public Lobby</h3>
+      <ul id="messages"> </ul>
+    </div>
+  </div>
+  <hr />
 
   <script>
     var socket = io();
+    var opts = { peerOpts: { trickle: false }, autoUpgrade: true }
+    var p2p = new P2P(socket, opts, function () {
+      console.log("P2P is initialized");
+    });
 
 
+
+    p2p.on('ready', function () {
+      $('#status').text("p2p is ready");
+      console.log("p2p is ready");
+
+    });
+
+    p2p.on('peers-list', function (peerId) {
+      console.log("Peer Joined (", peerId, ")");
+    })
+
+    p2p.on('message', function (messageBundle) {
+      console.log("Received peer-message", messageBundle);
+      $('#messages').append("<li> Peer Message :" + messageBundle.message + "@" + messageBundle.username + " </li>");
+    });
+
+    p2p.on('upgrade', function () {
+      $('#status').text("Currently Connected in P2P");
+      console.log("Currently Connected in P2P");
+      $('#p2p-status-on').prop("checked", true);
+      p2p.emit('peers-list', { peerId: p2p.id })
+    })
+
+    // p2p.on('peer-error', function (data) {
+    //   console.log("error in peer connection");
+    // })
+
+    //Receiving Events
+    socket.on('boardcast_message', function (messageBundle) {
+      console.log("Received From:", messageBundle.username, "Message:", messageBundle.message);
+      $('#messages').append("<li> " + messageBundle.message + "@" + messageBundle.username + " </li>");
+    })
+
+    //Join Room 
+    $('#joinRoom').click(function () {
+      console.log("Change Room to", $('#room').val());
+      socket.emit('room', $('#room').val());
+    });
+
+    //Leave Room
+    $('#leaveRoom').click(function () {
+      alert("No function yet");
+    });
 
 
     //Client side UI Interactions
     $('#sendButton').click(function () {
       var username = $('#username').val();
       var message = $('#m').val();
-      console.log("User", username, "Message", message);
-      socket.emit('message', {
-        username: username, message: message
-      });
+      var p2pmode = $('#p2p-status-on').is(':checked');
+      console.log("User", username, "Message", message, "Current P2P Mode", p2pmode);
+
+      if (p2pmode) {
+        //Emit P2P message mode
+        p2p.emit('message', { username: username, message: message })
+      } else {
+        //Emit Socket Message
+        socket.emit('message', { username: username, message: message });
+      }
+
       $('#messages').append("<li> " + message + "@" + username + "</li>");
-      $('#m').val('');
+      // $('#m').val('');
     });
-
-
-    //Receiving Events
-    socket.on('receive_message', function (messageBundle) {
-      console.log("Received From:", messageBundle.username, "Message:", messageBundle.message);
-      $('#messages').append("<li> " + messageBundle.message + "@" + messageBundle.username + " </li>");
-    })
   </script>
 </body>
 
