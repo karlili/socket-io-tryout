@@ -40,7 +40,7 @@ io.on('connection', function (socket) {
   //Trigger when message received  
   socket.on('message', function (messageBundle) {
     console.log("(", messageBundle.username, ")", messageBundle.message);
-    socket.broadcast.emit('receive_message', messageBundle);
+    socket.broadcast.emit('boardcast_message', messageBundle);
   });
 
   //Trigger when client disconnect
